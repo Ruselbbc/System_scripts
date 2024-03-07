@@ -44,5 +44,5 @@ for file in /home/bitrix/www/*_log.txt; do
     echo "Лог очищен $date_name " > $file;
 
 done
-
+# change the rights to the folder to the bitrix user
 chown bitrix:bitrix -R /home/bitrix/www/php_archive_log
