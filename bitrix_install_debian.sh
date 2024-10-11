@@ -930,6 +930,7 @@ line
 #Starting apache
 echo "Starting apache" 
 systemctl --now enable apache2
+systemctl restart apache2
 
 #Configiration database mariadb
 echo "Configiration database"
@@ -1097,6 +1098,52 @@ cp etc/push-server/push-server.service  /etc/systemd/system/
 ln -sf /opt/node_modules/push-server /opt/push-server
 
 line
+
+
+#Configure push server
+echo "Configure push server"
+cat <<\EOF >> /etc/redis/redis.conf
+GROUP=www-data
+SECURITY_KEY="2023!"
+RUN_DIR=/tmp/push-server
+REDIS_SOCK=/var/run/redis/redis.sock
+
+EOF
+
+line
+
+#Add user group
+useradd -g www-data bitrix
+
+#Multi node js proccess
+/usr/local/bin/push-server-multi configs pub
+/usr/local/bin/push-server-multi configs sub
+
+#Create tmpfiles.d catalog
+echo 'Create tmpfiles.d catalog'
+echo 'd /tmp/push-server 0770 bitrix www-data -' > /etc/tmpfiles.d/push-server.conf
+systemd-tmpfiles --remove --create
+
+line
+
+#Create a log catalog
+echo 'Create a log catalog'
+[[ ! -d /var/log/push-server ]] && mkdir /var/log/push-server
+chown bitrix:www-data /var/log/push-server
+
+line
+
+#change conf /etc/systemd/system/push-server.service
+echo 'change conf /etc/systemd/system/push-server.service'
+sed -i 's/Group=bitrix/Group=www-data/' /etc/systemd/system/push-server.service
+sed -i '9c\ExecStart=/usr/local/bin/push-server-multi systemd_start' /etc/systemd/system/push-server.service
+sed -i '10c\ExecStop=/usr/local/bin/push-server-multi stop' /etc/systemd/system/push-server.service
+
+systemctl daemon-reload
+
+systemctl --now enable push-server
+systemctl restart push-server
+
 
 echo "Test is over"
 
