@@ -52,7 +52,7 @@ apt install redis -y
 line
 
 #conf for nginx
-cat << \EOF > /etc/nginx/nginx.conf
+cat <<-EOF > /etc/nginx/nginx.conf
 user www-data www-data;
 
 worker_processes auto;
@@ -161,7 +161,7 @@ if [ -e /etc/nginx/sites-available ]; then
 
 #Create file's nginx and write conf
 echo "Create file default.conf and write in /etc/nginx/site-available"
-cat <<\EOF > /etc/nginx/site-available/default.conf
+cat <<-EOF > /etc/nginx/site-available/default.conf
 # Default website
 server {
 
@@ -193,7 +193,7 @@ EOF
 line
 
 echo "Create file's rtc.conf in /etc/nginx/site-available"
-cat <<\EOF > /etc/nginx/site-available/rtc.conf
+cat <<-EOF > /etc/nginx/site-available/rtc.conf
 server {
     listen 127.0.0.1:8895 default_server;
     server_name _;
@@ -220,7 +220,7 @@ EOF
 line
 
 echo "Create file's bitrix.conf in /etc/nginx/conf.d"
-cat <<\EOF > /etc/nginx/conf.d/bitrix.conf 
+cat <<-EOF > /etc/nginx/conf.d/bitrix.conf 
 # cache condition variable
 set $usecache "";
 if ($is_global_cache = 1)                     { set $usecache "${usecache}A"; }
@@ -265,7 +265,7 @@ location / {
 EOF
 
 echo "Create file's bitrix_block.conf in /etc/nginx/conf.d"
-cat <<\EOF > /etc/nginx/conf.d/bitrix_block.conf 
+cat <<-EOF > /etc/nginx/conf.d/bitrix_block.conf 
 #
 # block this locations for any installation
 #
@@ -295,7 +295,7 @@ location ~* ^/bitrix/html_pages/\.enabled { deny all; }
 EOF
 
 echo "Create file bitrix_general.conf in /etc/nginx/conf.d"
-cat <<\EOF > /etc/nginx/conf.d/bitrix_general.conf 
+cat <<-EOF > /etc/nginx/conf.d/bitrix_general.conf 
 #
 # Main configuration file for site with Bitrix CMS.
 # It doesn't contain configuration for .php and / 
@@ -464,7 +464,7 @@ location ^~ ^(/bitrixsetup\.php)$ { proxy_pass http://apache; proxy_buffering of
 EOF
 
 echo "Create file's bx_temp.conf in /etc/nginx/conf.d"
-cat <<\EOF > /etc/nginx/conf.d/bx_temp.conf 
+cat <<-EOF > /etc/nginx/conf.d/bx_temp.conf 
 # Settings BX_TEMPORARY_FILES_DIRECTORY
 location ~* ^/bx_tmp_download/ {
     internal;
@@ -478,7 +478,7 @@ location ~* ^/.bx_temp/default/ {
 EOF
 
 echo "Create file's errors.conf in /etc/nginx/conf.d"
-cat <<\EOF > /etc/nginx/conf.d/errors.conf 
+cat <<-EOF > /etc/nginx/conf.d/errors.conf 
 # Set error handlers
 error_page 403 /403.html;
 error_page 404 = @fallback;
@@ -498,13 +498,13 @@ location @fallback	{ proxy_pass http://apache; }
 EOF
 
 echo "Create file http-add_header.conf in /etc/nginx/conf.d"
-cat <<\EOF > /etc/nginx/conf.d/http-add_header.conf 
+cat <<-EOF > /etc/nginx/conf.d/http-add_header.conf 
 add_header "X-Content-Type-Options" "nosniff";
 add_header X-Frame-Options SAMEORIGIN;
 EOF
 
 echo "Create file's im_subscrider.conf in /etc/nginx/conf.d"
-cat <<\EOF > /etc/nginx/conf.d/im_subscrider.conf
+cat <<-EOF > /etc/nginx/conf.d/im_subscrider.conf
 # Ansible managed
 location ~* ^/bitrix/subws/ {
      access_log /var/log/nginx/im_access.log  json;
@@ -543,7 +543,7 @@ location ~* ^/bitrix/rest/ {
 EOF
 
 echo "Create file's maps.conf in /etc/nginx/conf.d"
-cat <<\EOF > /etc/nginx/conf.d/maps.conf
+cat <<-EOF > /etc/nginx/conf.d/maps.conf
 # if connection ti not set
 map $http_upgrade $connection_upgrade {
   default upgrade;
@@ -557,7 +557,7 @@ map $http_upgrade  $replace_upgrade {
 EOF
 
 echo "Create file's maps-composite_settings.conf in /etc/nginx/conf.d"
-cat <<\EOF > /etc/nginx/conf.d/maps-composite_settings.conf
+cat <<-EOF > /etc/nginx/conf.d/maps-composite_settings.conf
 #################### compisite cache keys
 ## /path/to/asset             => /path/to/asset
 ## /path/to/asset/            => /path/to/asset
@@ -681,7 +681,7 @@ map "${is_get}${cookie_PHPSESSID}" $is_global_cache {
 EOF
 
 echo "Create file's upstreams.conf in /etc/nginx/conf.d"
-cat <<\EOF > /etc/nginx/conf.d/upstreams.conf
+cat <<-EOF > /etc/nginx/conf.d/upstreams.conf
 # Apache/httpd server
 upstream apache {
     server httpd:8090;
@@ -737,7 +737,7 @@ if [ -e /etc/php/8.0//mods-available ]; then
     fi
 
 echo "Create file's opcache.ini in /etc/php/8.0/mods-available"
-cat <<\EOF > /etc/php/8.0/mods-available/opcache.ini
+cat <<-EOF > /etc/php/8.0/mods-available/opcache.ini
 zend_extension=opcache.so
 opcache.enable=1
 opcache.memory_consumption=1859
@@ -753,7 +753,7 @@ opcache.blacklist_filename=/etc/php.d/opcache*.blacklist
 EOF
 
 echo "Create file's zbx-bitrix.ini in /etc/php/8.0/mods-available"
-cat <<\EOF > /etc/php/8.0/mods-available/zbx-bitrix.ini
+cat <<-EOF > /etc/php/8.0/mods-available/zbx-bitrix.ini
 display_errors = Off
 error_reporting = E_ALL
 error_log = '/var/log/php/error.log'
@@ -810,7 +810,7 @@ if [ -e /etc/apache2/sites-available]; then
     fi
 
 echo "Create file's 000-default.conf in /etc/apache2/sites-available"
-cat <<\EOF > /etc/apache2/sites-available/000-default.conf
+cat <<-EOF > /etc/apache2/sites-available/000-default.conf
 ServerName redos
 ServerAdmin webmaster@localhost
 
@@ -903,7 +903,7 @@ EOF
 line
 
 echo "Create file's ports.conf in /etc/apache2/"
-cat <<\EOF > /etc/apache2/ports.conf
+cat <<-EOF > /etc/apache2/ports.conf
 # If you just change the port or add more ports here, you will likely also
 # have to change the VirtualHost statement in
 # /etc/apache2/sites-enabled/000-default.conf
@@ -943,7 +943,7 @@ if [ -e /etc/mysql/my-bx.d ]; then
     fi
 
 echo "Create file's zbx-custom.cnf in /etc/mysql/my-bx.d"
-cat <<\EOF > /etc/mysql/my-bx.d/zbx-custom.cnf
+cat <<-EOF > /etc/mysql/my-bx.d/zbx-custom.cnf
 [mysqld]
 transaction-isolation = READ-COMMITTED
 innodb_flush_log_at_trx_commit = 2
@@ -954,7 +954,7 @@ EOF
 line
 
 echo "Create file's my.cnf in /etc/mysql/"
-cat <<\EOF > /etc/mysql/my.cnf
+cat <<-EOF > /etc/mysql/my.cnf
 # The MariaDB configuration file
 #
 # The MariaDB/MySQL tools read configuration files in the following order:
@@ -1015,7 +1015,7 @@ Remove anonymous users? [Y/n] y
 #Configurate Redis
 echo "Configurate Redis"
 echo "Create a file redis.conf in /etc/redis/redis.conf"
-cat <<\EOF > /etc/redis/redis.conf
+cat <<-EOF > /etc/redis/redis.conf
 unixsocket /var/run/redis/redis.sock
 
 bind 127.0.0.1
@@ -1102,7 +1102,7 @@ line
 
 #Configure push server
 echo "Configure push server"
-cat <<\EOF >> /etc/redis/redis.conf
+cat <<-EOF >> /etc/redis/redis.conf
 GROUP=www-data
 SECURITY_KEY="2023!"
 RUN_DIR=/tmp/push-server
@@ -1164,7 +1164,7 @@ exit;
 #Configure settings.php
 echo "Configure settings.php"
 
-cat <<\EOF >> /var/www/html/bx-site/bitrix/.settings.php
+cat <<-EOF >> /var/www/html/bx-site/bitrix/.settings.php
 return array (
 'pull' => Array(
     'value' =>  array(
