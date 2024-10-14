@@ -1155,11 +1155,13 @@ chown www-data:www-data /var/www/html/bx-site -R
 #Create database
 echo "Create database and user"
 
-mysql
-create database portal;
-CREATE USER 'bitrix'@'localhost' IDENTIFIED BY '2023!';
-GRANT ALL PRIVILEGES ON portal.* to 'bitrix'@'localhost';
-exit;
+dplMYSQL() {
+	echo 'innodb_strict_mode=off' >> /etc/mysql/my-bx.d/zbx-custom.cnf
+	mysql -e "create database bitrix;create user bitrix@localhost;grant all on bitrix.* to bitrix@localhost;set password for bitrix@localhost = PASSWORD('2023!')"
+	systemctl stop mysql
+	systemctl --now enable mysql
+	systemctl start mysql
+}
 
 #Configure settings.php
 echo "Configure settings.php"
