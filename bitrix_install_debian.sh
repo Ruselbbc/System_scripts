@@ -5,37 +5,38 @@ function line {
     echo "===================================="
 }
 
-before_reboot(){
-  su - 
-  #Обновления системы
-  echo "Обновляю систему"
-  apt update && apt upgrade
-  
-  line
-  #  Отключение SELinux
-  echo "Отключаю SELINUX"
-  echo 'SELINUX=disabled' >> /etc/selinux/semanage.conf
-  
-}
+su - 
+#Обновления системы
+echo "Обновляю систему"
+apt update && apt upgrade
 
-after_reboot(){
+line
+#Отключение SELinux
+echo "Отключаю SELINUX"
+echo 'SELINUX=disabled' >> /etc/selinux/semanage.conf
 
-#Установка первых пакетов транспортировки шифрования и сертификтов
-echo "Устанавливаю пакеты"
+line
+#Reboot
+Reboot
+
+#Install first packet's, encryption tools and certificates
+echo "Install first packet's, encryption tools and certificates"
 apt install -y lsb-release ca-certificates apt-transport-https software-properties-common gnupg2
 
 line
 
-#Блок установки репозитория и проброса ключа
+#Install repo and add key
 echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" | \
-    sudo tee /etc/apt/sources.list.d/sury-php.list
+    tee /etc/apt/sources.list.d/sury-php.list
 wget -qO - https://packages.sury.org/php/apt.gpg | \
-    sudo apt-key add -
+    apt-key add -
 apt update
 
 line
 
-#Установка apache и php, nginx, mariadb, nodejs, redis
+line
+
+#Install apache and php, nginx, mariadb, nodejs, redis
  apt install apache2 -y
  apt install php8.0 php8.0-cli \
     php8.0-common php8.0-gd php8.0-ldap \
@@ -51,36 +52,8 @@ apt install redis -y
 
 line
 
-#Синхронизация nginx, если есть откуда стянуть (раскомментировать при необходимости):
-#echo "Синхронизирую nginx"
-#su -
-#rsync -av debian/nginx/ /etc/nginx/
-
-#line
-
-#Блок вставки кода для nginx
+#conf for nginx
 cat << \EOF > /etc/nginx/nginx.conf
-######################################### Конфигурация nginx
-#Рабочий каталог для сайта - /var/www/html/bx-site.
-#Конфигурация nginx сервера:
-# /etc/nginx/nginx.conf                                       # основной конфигурационный файл
-#            |_conf.d/upstreams.conf                         # конфигурация для upstream серверов: apache && push-server
-#            |_conf.d/maps-composite_settings.conf           # параменные используемые для кеша
-#            |_conf.d/maps.conf                              # дополнительные переменные
-#            |_conf.d/http-add_header.conf                   # CORS заголовки
-#            |_sites-available/*.conf                        # подключаем сайты
-#                              |_default.conf                # сайт по умолчанию (настраиваем только 80 порт)
-#                                    |_conf.d/bx_temp.conf   # конфигурация BX_TEMPORARY_FILES_DIRECTOR
-#                                    |_conf.d/bitrix.conf    # дефолтная конфигурация сайта
-#                              |_rtc.conf                    # проксирование запросов на push-server (публикация)
-#Дефолтная конфигурация сайта:
-# conf.d/bitrix.conf                                         # основный блоки со включенным по умолчанию кешем в файлах
-#        |_conf.d/bitrix_general.conf                        # отдача статики, быстрая отдача для внешних хранилищ и прочее
-#                |_conf.d/errors.conf                        # обработка ошибок
-#                |_conf.d/im_subscrider.conf                 # проксирование запросов на push-server (получение)
-#                |_conf.d/bitrix_block.conf                  # блокировки по умолчанию
-#
-######################################### Конфигурация nginx
 user www-data www-data;
 
 worker_processes auto;
@@ -168,27 +141,27 @@ http {
 	include sites-available/*.conf;
 
 }
-\EOF
+EOF
 
 line
 
-#Проверка на наличие папок nginx
-if [ -e /etc/nginx/conf.d ]  then
-        echo "Папка conf.d существует";
+#Check folder's nginx
+if [ -e /etc/nginx/conf.d ]; then
+        echo "Folder conf.d is vailable"
     else
-        echo "Папка не существует. Создаю папку conf.d";
+        echo "Папки не существует. Создаю папку conf.d";
         mkdir /etc/nginx/conf.d;
     fi
 
-if [ -e /etc/nginx/sites-available ]  then
-        echo "Папка существует";
+if [ -e /etc/nginx/sites-available ]; then
+        echo "Folder sites-available is vailable";
     else
-        echo "Папка не существует. Создаю папку site-available";
+        echo "Папки не существует. Создаю папку site-available";
         mkdir /etc/nginx/sites-available;
     fi
 
-#Создаём и вписываем файлы внутри nginx
-echo "Создаю и вписываю файл default.conf в /etc/nginx/site-available"
+#Create file's nginx and write conf
+echo "Create file default.conf and write in /etc/nginx/site-available"
 cat <<\EOF > /etc/nginx/site-available/default.conf
 # Default website
 server {
@@ -216,11 +189,11 @@ server {
     include conf.d/bitrix.conf;
 
 }
-\EOF
+EOF
 
 line
 
-echo "Создаю и вписываю файл rtc.conf в /etc/nginx/site-available"
+echo "Create file's rtc.conf in /etc/nginx/site-available"
 cat <<\EOF > /etc/nginx/site-available/rtc.conf
 server {
     listen 127.0.0.1:8895 default_server;
@@ -243,11 +216,11 @@ server {
     }
 
 }
-\EOF
+EOF
 
 line
 
-echo "Создаю и вписываю файл bitrix.conf в /etc/nginx/conf.d"
+echo "Create file's bitrix.conf in /etc/nginx/conf.d"
 cat <<\EOF > /etc/nginx/conf.d/bitrix.conf 
 # cache condition variable
 set $usecache "";
@@ -290,9 +263,9 @@ location ~ /$ {
 location / {
   proxy_pass http://apache;
 }
-\EOF
+EOF
 
-echo "Создаю и вписываю файл bitrix_block.conf в /etc/nginx/conf.d"
+echo "Create file's bitrix_block.conf in /etc/nginx/conf.d"
 cat <<\EOF > /etc/nginx/conf.d/bitrix_block.conf 
 #
 # block this locations for any installation
@@ -320,9 +293,9 @@ location ~* ^/upload/1c_[^/]+/ { deny all; }
 location ~* /\.\./ { deny all; }
 location ~* ^/bitrix/html_pages/\.config\.php { deny all; }
 location ~* ^/bitrix/html_pages/\.enabled { deny all; }
-\EOF
+EOF
 
-echo "Создаю и вписываю файл bitrix_general.conf в /etc/nginx/conf.d"
+echo "Create file bitrix_general.conf in /etc/nginx/conf.d"
 cat <<\EOF > /etc/nginx/conf.d/bitrix_general.conf 
 #
 # Main configuration file for site with Bitrix CMS.
@@ -489,9 +462,9 @@ location ~* ^/(pub/|online/|services/telephony/info_receiver.php|/bitrix/tools/v
 
 # Bitrix setup script
 location ^~ ^(/bitrixsetup\.php)$ { proxy_pass http://apache; proxy_buffering off; }
-\EOF
+EOF
 
-echo "Создаю и вписываю файл bx_temp.conf в /etc/nginx/conf.d"
+echo "Create file's bx_temp.conf in /etc/nginx/conf.d"
 cat <<\EOF > /etc/nginx/conf.d/bx_temp.conf 
 # Settings BX_TEMPORARY_FILES_DIRECTORY
 location ~* ^/bx_tmp_download/ {
@@ -503,9 +476,9 @@ location ~* ^/.bx_temp/default/ {
     internal;
     root /usr/share/nginx/html;
 }
-\EOF
+EOF
 
-echo "Создаю и вписываю файл errors.conf в /etc/nginx/conf.d"
+echo "Create file's errors.conf in /etc/nginx/conf.d"
 cat <<\EOF > /etc/nginx/conf.d/errors.conf 
 # Set error handlers
 error_page 403 /403.html;
@@ -523,15 +496,15 @@ location ^~ /504.html	{ root /srv/www/htdocs/bitrixenv_error; }
 location ^~ /403.html	{ root /srv/www/htdocs/bitrixenv_error; }
 location ^~ /404.html	{ root /srv/www/htdocs/bitrixenv_error; }
 location @fallback	{ proxy_pass http://apache; }
-\EOF
+EOF
 
-echo "Создаю и вписываю файл http-add_header.conf в /etc/nginx/conf.d"
+echo "Create file http-add_header.conf in /etc/nginx/conf.d"
 cat <<\EOF > /etc/nginx/conf.d/http-add_header.conf 
 add_header "X-Content-Type-Options" "nosniff";
 add_header X-Frame-Options SAMEORIGIN;
-\EOF
+EOF
 
-echo "Создаю и вписываю файл im_subscrider.conf в /etc/nginx/conf.d"
+echo "Create file's im_subscrider.conf in /etc/nginx/conf.d"
 cat <<\EOF > /etc/nginx/conf.d/im_subscrider.conf
 # Ansible managed
 location ~* ^/bitrix/subws/ {
@@ -568,9 +541,9 @@ location ~* ^/bitrix/rest/ {
     proxy_max_temp_file_size 0;
     proxy_read_timeout  43800;
 }
-\EOF
+EOF
 
-echo "Создаю и вписываю файл maps.conf в /etc/nginx/conf.d"
+echo "Create file's maps.conf in /etc/nginx/conf.d"
 cat <<\EOF > /etc/nginx/conf.d/maps.conf
 # if connection ti not set
 map $http_upgrade $connection_upgrade {
@@ -582,9 +555,9 @@ map $http_upgrade  $replace_upgrade {
   default $http_upgrade;
   ''      "websocket";
 }
-\EOF
+EOF
 
-echo "Создаю и вписываю файл maps-composite_settings.conf в /etc/nginx/conf.d"
+echo "Create file's maps-composite_settings.conf in /etc/nginx/conf.d"
 cat <<\EOF > /etc/nginx/conf.d/maps-composite_settings.conf
 #################### compisite cache keys
 ## /path/to/asset             => /path/to/asset
@@ -706,9 +679,9 @@ map "${is_get}${cookie_PHPSESSID}" $is_global_cache {
   default       "1";
   ~0            "0";
 }
-\EOF
+EOF
 
-echo "Создаю и вписываю файл upstreams.conf в /etc/nginx/conf.d"
+echo "Create file's upstreams.conf in /etc/nginx/conf.d"
 cat <<\EOF > /etc/nginx/conf.d/upstreams.conf
 # Apache/httpd server
 upstream apache {
@@ -734,37 +707,37 @@ upstream nodejs_pub {
   server push:9010;
   server push:9011;
 }
-\EOF
+EOF
 
 line
 
-echo "вписываю push httpd на localhost"
+echo "write push httpd in localhost"
 echo "127.0.0.1 push httpd" >> /etc/hosts
 
 line
 
-#Останавливаем apache перед запуском nginx
-echo "Останавливаю apache"
+#Stop apache before starting nginx
+echo "Stop apache2"
 systemctl stop apache2
 
 line
 
-echo "Запускаю nginx"
+echo "Launch nginx"
 systemctl --now enable nginx
 
 line
 
-#Проверка папки mods-available;
-echo "Конфигурирую mods-available;"
+#Check folder mods-available;
+echo "Configure mods-available;"
 
-if [ -e /etc/php/8.0//mods-available]  then
-        echo "Папка mods-available; существует";
+if [ -e /etc/php/8.0//mods-available ]; then
+        echo "Folder mods-available; is available"
     else
-        echo "Папки не существует. Создаю папку mods-available;";
+        echo "Folder is unvailable. Create folder mods-available;"
         mkdir /etc/php/8.0/mods-available;
     fi
 
-echo "Создаю и вписываю файл opcache.ini в /etc/php/8.0/mods-available"
+echo "Create file's opcache.ini in /etc/php/8.0/mods-available"
 cat <<\EOF > /etc/php/8.0/mods-available/opcache.ini
 zend_extension=opcache.so
 opcache.enable=1
@@ -778,9 +751,9 @@ opcache.fast_shutdown=1
 opcache.save_comments=1
 opcache.load_comments=1
 opcache.blacklist_filename=/etc/php.d/opcache*.blacklist
-\EOF
+EOF
 
-echo "Создаю и вписываю файл zbx-bitrix.ini в /etc/php/8.0/mods-available"
+echo "Create file's zbx-bitrix.ini in /etc/php/8.0/mods-available"
 cat <<\EOF > /etc/php/8.0/mods-available/zbx-bitrix.ini
 display_errors = Off
 error_reporting = E_ALL
@@ -817,27 +790,27 @@ session.cookie_httponly = On
 memory_limit = 512M
 
 date.timezone = UTC
-\EOF
+EOF
 
 line
 
-#Создаю линки для /etc/php/8.0/mods-available/zbx-bitrix.ini
+#Create a link for /etc/php/8.0/mods-available/zbx-bitrix.ini
 ln -sf /etc/php/8.0/mods-available/zbx-bitrix.ini  /etc/php/8.0/apache2/conf.d/99-bitrix.ini
 ln -sf /etc/php/8.0/mods-available/zbx-bitrix.ini  /etc/php/8.0/cli/conf.d/99-bitrix.ini
 
 line
 
-#Конфигурируем apache2
-echo "Конфигурируем apache2"
-echo "Проверяем папку apache2/sites-available"
-if [ -e /etc/apache2/sites-available]  then
-        echo "Папка sites-available существует";
+#Configuration apache2
+echo "Configuration apache2"
+echo "check folder apache2/sites-available"
+if [ -e /etc/apache2/sites-available]; then
+        echo "Folder sites-available is available"
     else
-        echo "Папки не существует. Создаю папку sites-available";
+        echo "Folder not available. Create folder sites-available"
         mkdir /etc/apache2/sites-available;
     fi
 
-echo "Создаю и вписываю файл 000-default.conf в /etc/apache2/sites-available"
+echo "Create file's 000-default.conf in /etc/apache2/sites-available"
 cat <<\EOF > /etc/apache2/sites-available/000-default.conf
 ServerName redos
 ServerAdmin webmaster@localhost
@@ -926,11 +899,11 @@ LogLevel warn
 	</Directory>
 
 </VirtualHost>
-\EOF
+EOF
 
 line
 
-echo "Создаю и вписываю файл ports.conf в /etc/apache2/"
+echo "Create file's ports.conf in /etc/apache2/"
 cat <<\EOF > /etc/apache2/ports.conf
 # If you just change the port or add more ports here, you will likely also
 # have to change the VirtualHost statement in
@@ -939,48 +912,49 @@ cat <<\EOF > /etc/apache2/ports.conf
 Listen 8090
 
 # vim: syntax=apache ts=4 sw=4 sts=4 sr noet
-\EOF
+EOF
 
 line
 
-#Отключаем листинг каталогов Apache2
-echo "Отключаем листинг каталогов Apache"
+#disable catalog list Apache2
+echo "disable catalog list Apache"
 a2dismod --force autoindex
 
 line
 
-#Включаем модуль rewrite
-echo "Включаем модуль rewrite" 
+#include module rewrite
+echo "include module  rewrite" 
 a2enmod rewrite
 
 line
 
-#Запускаем apache
-echo "Запускаем apache" 
+#Starting apache
+echo "Starting apache" 
 systemctl --now enable apache2
+systemctl restart apache2
 
-#Конфигурируем базу данных mariadb
-echo "Конфигурируем БД"
+#Configiration database mariadb
+echo "Configiration database"
 
-if [ -e /etc/mysql/my-bx.d ]  then
-        echo "Папка /etc/mysql/my-bx.d существует";
+if [ -e /etc/mysql/my-bx.d ]; then
+        echo "Folder /etc/mysql/my-bx.d available"
     else
-        echo "Папки не существует. Создаю папку my-bx.d";
+        echo "Folder is ulvailable. Create folder my-bx.d"
         mkdir /etc/mysql/my-bx.d;
     fi
 
-echo "Создаю и вписываю файл zbx-custom.cnf в /etc/mysql/my-bx.d"
+echo "Create file's zbx-custom.cnf in /etc/mysql/my-bx.d"
 cat <<\EOF > /etc/mysql/my-bx.d/zbx-custom.cnf
 [mysqld]
 transaction-isolation = READ-COMMITTED
 innodb_flush_log_at_trx_commit = 2
 innodb_flush_method = O_DIRECT
 thread_cache_size = 4
-\EOF
+EOF
 
 line
 
-echo "Создаю и вписываю файл my.cnf в /etc/mysql/"
+echo "Create file's my.cnf in /etc/mysql/"
 cat <<\EOF > /etc/mysql/my.cnf
 # The MariaDB configuration file
 #
@@ -1012,19 +986,19 @@ socket = /run/mysqld/mysqld.sock
 !includedir /etc/mysql/conf.d/
 !includedir /etc/mysql/mariadb.conf.d/
 !includedir /etc/mysql/my-bx.d/
-\EOF
+EOF
 
 line
 
-#Запуск сервиса mariadb
+#Start service mariadb
 
-echo "Запуск сервиса mariadb"
+echo "Start service mariadb"
 systemctl --now enable mariadb
 systemctl restart mariadb
 
 line
 
-#Далее устанавливаем БД как указано ниже
+#Use this instaction for install db
 : '
 mysql_secure_installation
 ...
@@ -1039,9 +1013,9 @@ Reloading privilege tables..
 Remove anonymous users? [Y/n] y
 '
 
-#Конфигурируем Redis
-echo "Конфигурируем Redis"
-echo "Создаю и вписываю файл redis.conf в /etc/redis/redis.conf"
+#Configurate Redis
+echo "Configurate Redis"
+echo "Create a file redis.conf in /etc/redis/redis.conf"
 cat <<\EOF > /etc/redis/redis.conf
 unixsocket /var/run/redis/redis.sock
 
@@ -1075,11 +1049,11 @@ activerehashing yes
 hz 10
 aof-rewrite-incremental-fsync yes
 maxmemory-policy allkeys-lru
-\EOF
+EOF
 
 line 
 
-echo "Меняем конфиг, делаем директорию"
+echo "Cheange conf, create a direct"
 
 usermod -g www-data redis
 chown root:www-data /etc/redis/ /var/log/redis/
@@ -1089,21 +1063,21 @@ systemctl daemon-reload
 
 line
 
-echo "Запускаем redis"
+echo "Start redis"
 systemctl enable redis-server.service
 systemctl restart redis-server.service
 
 line
 
-#Конфигурация push-server
+#Configure push-server
 
-#Скачиваем и устанавливаем push-server
-echo "Переходим в /opt, скачиваем и устанавливаем push-server"
+#Download and install push-server
+echo "Go to /opt, download and install push-server"
 cd /opt
 wget https://repo.bitrix.info/vm/push-server-0.3.0.tgz
 npm install --production ./push-server-0.3.0.tgz
 
-#Должно закончиться так:
+#Expected output:
 : '
 added 1 package, and audited 145 packages in 13s
 16 packages are looking for funding
@@ -1111,15 +1085,15 @@ added 1 package, and audited 145 packages in 13s
 
 line
 
-# Создаём символ линк
+# Create a symbol link
 ln -sf /opt/node_modules/push-server/etc/push-server /etc/push-server
 
-#Копируем конфигурационные файлы в основной конфиг
-echo "Копируем конфигурационные файлы в основной конфиг"
+#Copy conf file in base conf
+echo "Copy conf file in base conf"
 
 cd /opt/node_modules/push-server
 cp etc/init.d/push-server-multi /usr/local/bin/push-server-multi
-mkdir /etc/sysconfig
+#mkdir /etc/sysconfig
 cp etc/sysconfig/push-server-multi  /etc/sysconfig/push-server-multi
 cp etc/push-server/push-server.service  /etc/systemd/system/
 ln -sf /opt/node_modules
@@ -1127,13 +1101,4 @@ ln -sf /opt/node_modules
 
 line
 
-}
 
-if grep -Fxq "SELINUX=disabled" /etc/selinux/semanage.conf; then
-  echo "Выполняю сценарий после перезагрузки" 
-  after_reboot
-else
-  echo "Выполняю сценарий до перезагрузки" 
-  before_reboot
-  reboot
-fi
