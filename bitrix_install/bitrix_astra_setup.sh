@@ -151,6 +151,7 @@ UpdateRedis(){
 
 InstallPushServer(){
     PUSH_KEY=$(pwgen 24 1)
+    PUSH_CFG="/etc/sysconfig/push-server-multi"
 
     cd /opt
     npm install --omit=dev ./push-server-0.4.0.tgz
@@ -164,11 +165,21 @@ InstallPushServer(){
     cp etc/sysconfig/push-server-multi  /etc/sysconfig/push-server-multi
     cp etc/push-server/push-server.service  /etc/systemd/system/
     ln -sf /opt/node_modules/push-server /opt/push-server
-    cat <<EOF >> /etc/sysconfig/push-server-multi
-    GROUP=www-data
-    SECURITY_KEY="${PUSH_KEY}"
-    RUN_DIR=/tmp/push-server
-    REDIS_SOCK=/var/run/redis/redis.sock
+    #cat <<EOF >> /etc/sysconfig/push-server-multi
+    #GROUP=www-data
+    #SECURITY_KEY="${PUSH_KEY}"
+    #RUN_DIR=/tmp/push-server
+    #REDIS_SOCK=/var/run/redis/redis.sock
+  
+    grep -q '^GROUP=' "$PUSH_CFG" || echo 'GROUP=www-data' >> "$PUSH_CFG"
+    grep -q '^RUN_DIR=' "$PUSH_CFG" || echo 'RUN_DIR=/tmp/push-server' >> "$PUSH_CFG"
+    grep -q '^REDIS_SOCK=' "$PUSH_CFG" || echo 'REDIS_SOCK=/var/run/redis/redis.sock' >> "$PUSH_CFG"
+
+    if grep -q '^SECURITY_KEY=' "$PUSH_CFG"; then
+      sed -i "s|^SECURITY_KEY=.*|SECURITY_KEY=\"${PUSH_KEY}\"|" "$PUSH_CFG"
+    else
+      echo "SECURITY_KEY=\"${PUSH_KEY}\"" >> "$PUSH_CFG"
+    fi
 EOF
 
     id -u bitrix >/dev/null 2>&1 || useradd -g www-data bitrix
