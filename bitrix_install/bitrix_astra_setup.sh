@@ -39,7 +39,23 @@ apt install apache2 apache2-dev -y
 echo "--------------------------------------"
 
 echo "Установка PHP"
-apt install php php-cli php-common php-dev php-gd php-imap php-ldap php-mbstring php-mysql php-opcache php-pspell php-xml php-zip php-amqp php-apcu php-pear -y
+apt install \
+  php$PHP_VERSION \
+  php$PHP_VERSION-cli \
+  php$PHP_VERSION-common \
+  php$PHP_VERSION-dev \
+  php$PHP_VERSION-gd \
+  php$PHP_VERSION-imap \
+  php$PHP_VERSION-ldap \
+  php$PHP_VERSION-mbstring \
+  php$PHP_VERSION-mysql \
+  php$PHP_VERSION-opcache \
+  php$PHP_VERSION-pspell \
+  php$PHP_VERSION-xml \
+  php$PHP_VERSION-zip \
+  php$PHP_VERSION-amqp \
+  php$PHP_VERSION-apcu \
+  php-pear -y
 echo "--------------------------------------"
 
 echo "Установка Nginx"
@@ -72,9 +88,11 @@ UpdateNginx(){
 }
 
 UpdatePHP(){
+    PHP_CONF_DIR="/etc/php/$PHP_VERSION/apache2/conf.d"
+    
     cd /opt/astra/php.d/
-    cat opcache.ini >> /etc/php/8.2/apache2/conf.d/bitrix.ini
-    cat zbx-bitrix.ini >> /etc/php/8.2/apache2/conf.d/bitrix.ini
+    cat opcache.ini >> "$PHP_CONF_DIR/bitrix.ini"
+    cat zbx-bitrix.ini >> "$PHP_CONF_DIR/bitrix.ini"
     mkdir /var/log/php
     chown -R www-data:www-data /var/log/php
 }
@@ -83,7 +101,7 @@ UpdateApache(){
     rsync -av /opt/astra/apache2/ /etc/apache2/
     a2dismod --force autoindex
     a2enmod rewrite
-    a2enmod php8.2
+    a2enmod php$PHP_VERSION
     systemctl --now enable apache2
 }
 
@@ -121,6 +139,8 @@ UpdateRedis(){
 }
 
 InstallPushServer(){
+    PUSH_KEY=$(pwgen 24 1)
+
     cd /opt
     npm install --omit=dev ./push-server-0.4.0.tgz
     #added 1 package in 8s
@@ -153,8 +173,7 @@ EOF
 }
 
 
-
-
-PUSH_KEY=$(pwgen 24 1)
+nginx -t || exit 1
+apachectl -t || exit 1
 
 echo "Установка зависимостей завершена, не забудьте установить пароль в mysql_secure_installation"
