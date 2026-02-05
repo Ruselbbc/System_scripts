@@ -88,15 +88,20 @@ UpdateNginx(){
      rsync -av /opt/astra/nginx/ /etc/nginx/
      grep -qE '^127\.0\.0\.1\s+push\s+httpd$' /etc/hosts || echo "127.0.0.1 push httpd" >> /etc/hosts
      systemctl stop apache2
+
+     nginx -t || { echo "Ошибка: nginx конфиг невалиден, reload не выполнен"; exit 1; }
      systemctl --now enable nginx
+     systemctl reload nginx
 }
 
 UpdatePHP(){
     PHP_CONF_DIR="/etc/php/$PHP_VERSION/apache2/conf.d"
     
     cd /opt/astra/php.d/
-    cat opcache.ini >> "$PHP_CONF_DIR/bitrix.ini"
-    cat zbx-bitrix.ini >> "$PHP_CONF_DIR/bitrix.ini"
+    #cat opcache.ini >> "$PHP_CONF_DIR/bitrix.ini"
+    #cat zbx-bitrix.ini >> "$PHP_CONF_DIR/bitrix.ini"
+    cat opcache.ini zbx-bitrix.ini > "$PHP_CONF_DIR/99-bitrix.ini"
+    
     mkdir -p /var/log/php
     chown -R www-data:www-data /var/log/php
 }
@@ -107,6 +112,8 @@ UpdateApache(){
     a2enmod rewrite
     a2enmod php$PHP_VERSION
     systemctl --now enable apache2
+    apachectl -t || { echo "Ошибка: apache конфиг невалиден, reload не выполнен"; exit 1; }
+    systemctl reload apache2
 }
 
 UpdateMariaDB(){
@@ -183,10 +190,5 @@ UpdateApache
 UpdateMariaDB
 UpdateRedis
 InstallPushServer
-
-
-nginx -t || exit 1
-apachectl -t || exit 1
-
 
 echo "Установка зависимостей завершена, не забудьте установить пароль в mysql_secure_installation"
