@@ -21,7 +21,7 @@ detect_astra_version() {
   # 1) Если есть /etc/astra_version — обычно это самый надёжный источник
   if [ -f /etc/astra_version ]; then
     # обычно там что-то вроде: 1.7.5.12 / 1.8.x
-    grep -Eo '^[0-9]+\.[0-9]+' /etc/astra_version && return 0
+    grep -m1 -Eo '^[0-9]+\.[0-9]+' /etc/astra_version && return 0
   fi
 
   # 2) fallback: /etc/os-release (не всегда содержит "1.7/1.8" напрямую, но пробуем)
@@ -121,7 +121,7 @@ UpdateNginx(){
      rsync -av /opt/astra/nginx/ /etc/nginx/
      grep -qE '^127\.0\.0\.1\s+push\s+httpd$' /etc/hosts || echo "127.0.0.1 push httpd" >> /etc/hosts
 
-     nginx -t || { echo "Ошибка: nginx конфиг невалиден, reload не выполнен"; exit 1; }
+     nginx -t || { echo "Ошибка: nginx конфиг невалиден, перезапуск не выполнен"; exit 1; }
      
      systemctl stop apache2
      systemctl --now enable nginx
