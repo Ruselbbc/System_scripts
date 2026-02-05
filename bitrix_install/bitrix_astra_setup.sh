@@ -106,7 +106,6 @@ UpdateApache(){
 }
 
 UpdateMariaDB(){
-    su -
     rsync -av /opt/astra/mysql/ /etc/mysql/
     systemctl --now enable mariadb
     systemctl restart mariadb
@@ -172,8 +171,18 @@ EOF
     systemctl --now enable push-server
 }
 
+InstallSoft
+UnzipAstra
+UpdateNginx
+UpdatePHP
+UpdateApache
+UpdateMariaDB
+UpdateRedis
+InstallPushServer
+
 
 nginx -t || exit 1
 apachectl -t || exit 1
+
 
 echo "Установка зависимостей завершена, не забудьте установить пароль в mysql_secure_installation"
