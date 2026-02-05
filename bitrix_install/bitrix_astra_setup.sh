@@ -34,6 +34,10 @@ echo "Обновление ОС"
 apt update
 echo "--------------------------------------"
 
+echo "Устанавливаем зависимости unzip, rsync, pwgen если их нет"
+apt install -y unzip rsync pwgen
+echo "--------------------------------------"
+
 echo "Установка apache2"
 apt install apache2 apache2-dev -y   
 echo "--------------------------------------"
@@ -82,7 +86,7 @@ UnzipAstra(){
 
 UpdateNginx(){
      rsync -av /opt/astra/nginx/ /etc/nginx/
-     echo "127.0.0.1 push httpd" >> /etc/hosts
+     grep -qE '^127\.0\.0\.1\s+push\s+httpd$' /etc/hosts || echo "127.0.0.1 push httpd" >> /etc/hosts
      systemctl stop apache2
      systemctl --now enable nginx
 }
@@ -93,7 +97,7 @@ UpdatePHP(){
     cd /opt/astra/php.d/
     cat opcache.ini >> "$PHP_CONF_DIR/bitrix.ini"
     cat zbx-bitrix.ini >> "$PHP_CONF_DIR/bitrix.ini"
-    mkdir /var/log/php
+    mkdir -p /var/log/php
     chown -R www-data:www-data /var/log/php
 }
 
@@ -148,7 +152,7 @@ InstallPushServer(){
     ln -sf /opt/node_modules/push-server/etc/push-server /etc/push-server
     cd /opt/node_modules/push-server
     cp etc/init.d/push-server-multi /usr/local/bin/push-server-multi
-    mkdir /etc/sysconfig
+    mkdir -p /etc/sysconfig
     cp etc/sysconfig/push-server-multi  /etc/sysconfig/push-server-multi
     cp etc/push-server/push-server.service  /etc/systemd/system/
     ln -sf /opt/node_modules/push-server /opt/push-server
@@ -159,7 +163,7 @@ InstallPushServer(){
     REDIS_SOCK=/var/run/redis/redis.sock
 EOF
 
-    useradd -g www-data bitrix
+    id -u bitrix >/dev/null 2>&1 || useradd -g www-data bitrix
     [[ ! -d /var/log/push-server ]] && mkdir /var/log/push-server
     chown bitrix:www-data /var/log/push-server
     /usr/local/bin/push-server-multi configs pub
