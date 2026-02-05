@@ -87,10 +87,10 @@ UnzipAstra(){
 UpdateNginx(){
      rsync -av /opt/astra/nginx/ /etc/nginx/
      grep -qE '^127\.0\.0\.1\s+push\s+httpd$' /etc/hosts || echo "127.0.0.1 push httpd" >> /etc/hosts
-     systemctl stop apache2
 
      nginx -t || { echo "Ошибка: nginx конфиг невалиден, reload не выполнен"; exit 1; }
      
+     systemctl stop apache2
      systemctl --now enable nginx
      systemctl reload nginx
 }
