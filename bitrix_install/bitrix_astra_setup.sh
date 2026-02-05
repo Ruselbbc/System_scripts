@@ -92,7 +92,7 @@ UpdateNginx(){
      
      systemctl stop apache2
      systemctl --now enable nginx
-     systemctl reload nginx
+     systemctl restart nginx
 }
 
 UpdatePHP(){
@@ -150,8 +150,12 @@ UpdateRedis(){
 }
 
 InstallPushServer(){
-    PUSH_KEY=$(pwgen 24 1)
     PUSH_CFG="/etc/sysconfig/push-server-multi"
+    if [ -f "$PUSH_CFG" ] && grep -q '^SECURITY_KEY=' "$PUSH_CFG"; then
+      PUSH_KEY=$(grep '^SECURITY_KEY=' "$PUSH_CFG" | sed 's/^SECURITY_KEY=//' | tr -d '"')
+    else
+      PUSH_KEY=$(pwgen 24 1)
+    fi
 
     cd /opt
     npm install --omit=dev ./push-server-0.4.0.tgz
