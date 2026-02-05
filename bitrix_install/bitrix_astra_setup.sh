@@ -14,20 +14,53 @@ if [ ! -f /opt/push-server-0.4.0.tgz ]; then
     exit 1
 fi
 
-read -rp "Введите версию PHP (например 7.3 или 8.1): " PHP_VERSION
+# Если оба файла найдены, выводим сообщение об успешном завершении
+echo "Все необходимые файлы найдены в каталоге /opt"
 
-case "$PHP_VERSION" in
-  7.3|7.4|8.0|8.1|8.2)
-    echo "Будет использован PHP $PHP_VERSION"
+detect_astra_version() {
+  # 1) Если есть /etc/astra_version — обычно это самый надёжный источник
+  if [ -f /etc/astra_version ]; then
+    # обычно там что-то вроде: 1.7.5.12 / 1.8.x
+    grep -Eo '^[0-9]+\.[0-9]+' /etc/astra_version && return 0
+  fi
+
+  # 2) fallback: /etc/os-release (не всегда содержит "1.7/1.8" напрямую, но пробуем)
+  if [ -f /etc/os-release ]; then
+    # иногда VERSION_ID может быть чем-то вроде "1.7" / "1.8"
+    . /etc/os-release
+    if echo "${VERSION_ID:-}" | grep -Eq '^[0-9]+\.[0-9]+$'; then
+      echo "$VERSION_ID"
+      return 0
+    fi
+  fi
+
+  return 1
+}
+
+ASTRA_MINOR="$(detect_astra_version)" || {
+  echo "Ошибка: не смог определить версию Astra Linux (нет /etc/astra_version и непонятный /etc/os-release)"
+  exit 1
+}
+
+echo "Определена Astra Linux: $ASTRA_MINOR"
+case "$ASTRA_MINOR" in
+  1.7)
+    echo "Astra 1.7: доступны PHP 7.3 или 8.1"
+    read -rp "Введите версию PHP (7.3 или 8.1): " PHP_VERSION
+    case "$PHP_VERSION" in
+      7.3|8.1) : ;;
+      *) echo "Ошибка: для Astra 1.7 поддерживаются только PHP 7.3 или 8.1"; exit 1 ;;
+    esac
+    ;;
+  1.8)
+    PHP_VERSION="8.2"
+    echo "Astra 1.8: доступен только PHP $PHP_VERSION (выбрано автоматически)"
     ;;
   *)
-    echo "Ошибка: поддерживаются только версии 7.3, 7.4, 8.0, 8.1, 8.2"
+    echo "Ошибка: поддерживаются только Astra 1.7 и 1.8 (определено: $ASTRA_MINOR)"
     exit 1
     ;;
 esac
-
-# Если оба файла найдены, выводим сообщение об успешном завершении
-echo "Все необходимые файлы найдены в каталоге /opt"
 
 InstallSoft(){
 echo "Обновление ОС"
