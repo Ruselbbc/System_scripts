@@ -180,7 +180,7 @@ InstallPushServer(){
     else
       echo "SECURITY_KEY=\"${PUSH_KEY}\"" >> "$PUSH_CFG"
     fi
-EOF
+#EOF
 
     id -u bitrix >/dev/null 2>&1 || useradd -g www-data bitrix
     [[ ! -d /var/log/push-server ]] && mkdir /var/log/push-server
