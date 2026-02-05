@@ -38,8 +38,10 @@ detect_astra_version() {
 }
 
 ASTRA_MINOR="$(detect_astra_version)" || {
+if [ -z "$ASTRA_MINOR" ]; then
   echo "Ошибка: не смог определить версию Astra Linux (нет /etc/astra_version и непонятный /etc/os-release)"
   exit 1
+fi
 }
 
 echo "Определена Astra Linux: $ASTRA_MINOR"
