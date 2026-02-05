@@ -81,7 +81,7 @@ echo "--------------------------------------"
 
 UnzipAstra(){
     cd /opt
-    unzip astra.zip
+    unzip -o astra.zip
 }
 
 UpdateNginx(){
@@ -90,6 +90,7 @@ UpdateNginx(){
      systemctl stop apache2
 
      nginx -t || { echo "Ошибка: nginx конфиг невалиден, reload не выполнен"; exit 1; }
+     
      systemctl --now enable nginx
      systemctl reload nginx
 }
